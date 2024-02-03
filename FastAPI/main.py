@@ -7,16 +7,18 @@ from database import SessionLocal, engine
 import models
 from fastapi.middleware.cors import CORSMiddleware
 
-
 app = FastAPI()
 
 origins = {
-    'http://localhost:3000'
+    "http://localhost:3000",
 }
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*']
 )
 
 
@@ -44,12 +46,13 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 models.Base.metadata.create_all(bind=engine)
 
+
 @app.get("/")
 async def hello_world():
     return {"message", "Hello World!"}
 
 
-@app.post("/user/", response_model=UserModel)
+@app.post("/users/", response_model=UserModel)
 async def create_user(user: UserBase, db: db_dependency):
     db_transaction = models.User(**user.dict())
     db.add(db_transaction)
@@ -57,8 +60,9 @@ async def create_user(user: UserBase, db: db_dependency):
     db.refresh(db_transaction)
     return db_transaction
 
-@app.get("/users", response_model=List[UserModel])
-async def read_users(db: db_dependency, skip: int=0, limit: int=100):
+
+@app.get("/users/", response_model=List[UserModel])
+async def read_users(db: db_dependency, skip: int = 0, limit: int = 100):
     transactions = db.query(models.User).offset(skip).limit(limit).all()
     return transactions
 # app = FastAPI()
